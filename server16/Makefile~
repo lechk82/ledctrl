@@ -1,2 +1,0 @@
-stm32led: stm32led.c
-	gcc -o stm32led stm32led.c
