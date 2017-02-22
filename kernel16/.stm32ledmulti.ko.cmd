@@ -1,0 +1,1 @@
+cmd_/mnt/mmcblk0p2/home/ledctrl/kernel/stm32ledmulti.ko := ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /mnt/mmcblk0p2/home/ledctrl/kernel/stm32ledmulti.ko /mnt/mmcblk0p2/home/ledctrl/kernel/stm32ledmulti.o /mnt/mmcblk0p2/home/ledctrl/kernel/stm32ledmulti.mod.o
