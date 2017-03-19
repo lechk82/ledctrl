@@ -1,0 +1,41 @@
+// Definitions for MCP23017 Gpio Extender from Microchip Semiconductor
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
+	/*
+	fragment@0 {
+		target = <&i2c1>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+	*/
+	fragment@0 {
+		target = <&i2c1>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pcf8574_0 {
+				compatible = "nxp,pcf8574";
+				reg = <0x21>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				//lines-initial-states = <0xff>;
+				status = "okay";
+			};
+			pcf8574_1 {
+				compatible = "nxp,pcf8574";
+                                reg = <0x22>;
+                                gpio-controller;
+                                #gpio-cells = <2>;
+                                //lines-initial-states = <0xff>;
+                                status = "okay";
+			};
+		};		
+	};
+};
+
