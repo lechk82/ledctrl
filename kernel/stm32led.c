@@ -1,5 +1,6 @@
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/device.h>        
 #include <linux/kernel.h>
 #include <linux/fs.h>
@@ -35,10 +36,11 @@ static val16_t cols16;
 static unsigned cols;
 static unsigned reset_pin = 26;
 module_param(silent, bool, 0);
-module_param(cols, uint, 0);
-MODULE_PARM_DESC(cols, "Number of columns (0-255)");
-MODULE_PARM_DESC(silent, "Disables led wakeup sequence (1,0), default: 0");
-MODULE_PARM_DESC(reset_pin, "stm32 gpio reset pin, default: 26");
+module_param(cols, uint, 0444);
+module_param(reset_pin, uint, 0);
+MODULE_PARM_DESC(cols, " Number of columns (0-255)");
+MODULE_PARM_DESC(silent, " Disables led wakeup sequence (1,0), default: 0");
+MODULE_PARM_DESC(reset_pin, " stm32 gpio reset pin, default: 26");
 
 static struct gpio pins[1];
 
