@@ -109,6 +109,14 @@ int main(int argc, char* argv[]){
     	}
 	}
 	
+    /*
+    // Gpio test
+    uint32_t base = getGpioBase(21);
+    exportGpios(base,8);
+    setGpio(base,0,false);
+    unexportGpios(base,8);
+    */
+    
 	//server stuff
 	jrpc_server_init(&my_server, port);
 	jrpc_register_procedure(&my_server, initLED, "i", NULL );
@@ -162,7 +170,7 @@ char buf3[255];
             sprintf(buf1, "%d", base+i); 
             fwrite(buf1, 1 , sizeof(buf1) , fp );
             fclose (fp);
-            while(access(buf2, F_OK ) == -1);
+            while(access(buf3, F_OK ) == -1);
             
             fp = fopen(buf3, "w");
             sprintf(buf1, "high"); 
