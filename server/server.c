@@ -17,7 +17,9 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <glob.h>
 #include "jsonrpc-c.h"
+
 
 #define ROWS 16
 #define MIN_cols 1
@@ -77,6 +79,10 @@ bool gammaSet = false;
 bool busy = true;
 
 /*** Prototypes ***/
+uint32_t getGpioBase(uint8_t reg);
+void exportGpios(uint32_t base, uint32_t n);
+void unexportGpios(uint32_t base, uint32_t n);
+void setGpio(uint32_t base, uint32_t gpio, bool val);
 
 cJSON * initLED(jrpc_context * ctx, cJSON * params, cJSON *id);
 cJSON * setLED(jrpc_context * ctx, cJSON * params, cJSON *id);
@@ -112,12 +118,105 @@ int main(int argc, char* argv[]){
 	printf("Listening on port %d\n",port); fflush(stdout);
 	jrpc_server_run(&my_server);
 	jrpc_server_destroy(&my_server);
-	
+    
 	free(rgbbuf);
 	return 0;
 }
 
 /*** Functions ***/
+
+uint32_t getGpioBase(uint8_t reg){
+glob_t globbuf;
+FILE * fp;
+char buf[255];
+uint32_t base=0;
+    
+    sprintf(buf, "/sys/class/i2c-dev/i2c-1/device/1-00%2d/gpio/gpiochip*/base", reg);
+    glob(buf, 0, NULL, &globbuf);
+    if(globbuf.gl_pathc == 1){
+        fp = fopen (globbuf.gl_pathv[0],"r");
+        fscanf(fp, "%s", buf);
+        base = atoi(buf);
+        fclose (fp);
+    }
+    else{
+        globfree(&globbuf);
+        printf("Error: No  gpiochip base found for reg 0x%d\n",reg); fflush(stdout);
+        exit(1);
+    }
+    globfree(&globbuf);
+    return base;
+}
+
+void exportGpios(uint32_t base, uint32_t n){
+FILE * fp;
+char buf1[16];
+char buf2[255];
+char buf3[255];
+    for(int i=0;i<n;i++){
+        sprintf(buf2, "/sys/class/gpio/gpio%d", base+i);
+        sprintf(buf3, "/sys/class/gpio/gpio%d/direction", base+i);
+        if( access(buf2, F_OK ) == -1 ) {
+            printf("export: %s\n",buf2); fflush(stdout);
+            fp = fopen("/sys/class/gpio/export", "w");
+            sprintf(buf1, "%d", base+i); 
+            fwrite(buf1, 1 , sizeof(buf1) , fp );
+            fclose (fp);
+            while(access(buf2, F_OK ) == -1);
+            
+            fp = fopen(buf3, "w");
+            sprintf(buf1, "high"); 
+            fwrite(buf1, 1 , sizeof(buf1) , fp );
+            fclose (fp);
+            
+        }
+    }
+    return;
+}
+
+void unexportGpios(uint32_t base, uint32_t n){
+FILE * fp;
+char buf1[16];
+char buf2[255];
+char buf3[255];
+    for(int i=0;i<n;i++){
+        sprintf(buf2, "/sys/class/gpio/gpio%d", base+i);
+        sprintf(buf3, "/sys/class/gpio/gpio%d/value", base+i);
+        if( access(buf2, W_OK ) != -1 ) {
+            fp = fopen(buf3, "w");
+            sprintf(buf1, "%d", 1); 
+            fwrite(buf1, 1 , sizeof(buf1) , fp );
+            fclose (fp);
+            printf("unexport: %s\n",buf2); fflush(stdout);
+            if( access(buf3, W_OK ) != -1 ) {
+                fp = fopen("/sys/class/gpio/unexport", "w");
+                sprintf(buf1, "%d", base+i); 
+                fwrite(buf1, 1 , sizeof(buf1) , fp );
+                fclose (fp);
+            }
+        }
+    }
+    return;
+}
+
+void setGpio(uint32_t base, uint32_t gpio, bool val){
+FILE * fp;
+char buf1[16];
+char buf2[255];
+    sprintf(buf2, "/sys/class/gpio/gpio%d/value", base+gpio);
+    if( access(buf2, W_OK ) != -1 ) {
+        if(val == true){
+            sprintf(buf1, "%d", 1); 
+        }
+        if(val == false){
+            sprintf(buf1, "%d", 0); 
+        }
+        fp = fopen(buf2, "w");
+        fwrite(buf1, 1 , sizeof(buf1) , fp );
+        fclose (fp);
+    }
+    return;
+}
 
 void callback(cJSON *item, uint8_t level, uint16_t iter){
 uint32_t i;
