@@ -53,9 +53,10 @@ This project is currently under development.
                              |            +---+----+
                              v            |opto    |
      16x                +----+----+       |coupler |
-+24V+------------------>+16x      |       +---+----+      isolation
-                        |isolated |       |   |    |        barrier
-              ...........relays   +...........|....................
++24V+------------------>+16x      |       +---+----+
+                        |isolated |       |   |    |      isolation
+                        |relays   |       |   |    |        barrier
+              ................................|....................
               .         |in groups|       |   v    |
           +---+----+ 5V |of 4     |       +---+----+
           |24V/5V  +--->+         |       | MAX481 |
