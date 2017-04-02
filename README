@@ -8,7 +8,7 @@ This project is currently under development.
 +24V+-------------->+  5V/3A  |                                   |
         |           |step-down|                                   |
         |           +---------+    +----------------+             |
-        |                          |  Raspberry Pi  |             
+        |                          |  Raspberry Pi  |             |
 +----+  |            +-------+     |      Zero      |             |
 |LCD |  |            | level |     +----------------+             |   +----+
 |1602+<-----------+->+shifter+<-+->+I2C|SPI|GPIO|USB+---------------->+Wifi|
@@ -91,7 +91,7 @@ This project is currently under development.
               .                      +5V|                |led data
               .                         |                |
               .                         |  +----------+  |
-              .                         +->+WS2812b   +<-+
+              .                         +->+ WS2812b  +<-+
               .                            |LED-Stripe|
               .                            +----------+
               .                                     16x Stripes
