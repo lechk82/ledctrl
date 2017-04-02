@@ -1,7 +1,7 @@
 ledctrl
 This project is currently under development.
 
-*** Block diagram ***
+*** Hardware block diagram ***
 
         +---------------------------------------------------------+
         |           +---------+                                   |
@@ -22,7 +22,11 @@ This project is currently under development.
         |         |                |     v     |                  |
         |         |                |   +-+-+   |                  |
         |         |                |   |SPI|   |                  |
-        |         |                +-----------+                  |
+        |         |                |   +---+   |                  |
+        |         |                |   |DMA|   |                  |
+        |         |                |   +-+-+   |                  |
+        |         |                |     v     |                  |
+        |         |                +-----+-----+                  |
         |         |                |DMA|DMA|DMA|                  |
         |         |                +-----------+                  |
         |         |                |TIM|TIM|TIM|                  |
@@ -91,7 +95,62 @@ This project is currently under development.
               .                                     16x Stripes
               .                                     à ~50 LEDs
 
+*** Software block diagram ***
+
++-----------------------------------+------------------------+
+|  kernel space                     .         user space     |
+|                                   .                        |
++----------------+                  .   +--------------------+
+|  stm32led.ko   |                  .   |       server       |
+|                |                  .   |                    |
++----+ +---------+  char dev        .   |          +---------+
+|GPIO| |3*16*cols|  /dev/stm32led   .   |          |4*16*cols|
+|pin | |  bytes  +<--------------------------------+  bytes  |
++--+-+ |  buffer |                  .   |          |  buffer |
+|  |   +----+----+                  .   |          +----+----+
+|  |        |    |                  .   |               ^    |
+|  |        v    |    +---------+   .   +-------+       |    |
+|  |   +----+----+    |port     |   .   | sysfs |   +---+----+
+|  |   |remap RGB|    |expander +<------+ GPIO  +<--+JSON-RPC|
+|  |   +----+----+    |GPIO pins|   .   |control|   | server |
+|  |        |    |    +---+-----+   .   +-------+---+--------+  +------+
+|  |        v    |        |         .                    ^   |  |remote|
+|  |   +----+----+        |         .       socket port  +----->+client|
+|  |   |spidev0.0|        |         .                    v   |  +------+
+|  |   +----+----+        |         .                 +--+---+
+|  |        |    |        |         .                 |local |
+|  |        |    |        |         .                 |client|
++--|--------|----+--------|---------+-----------------+------+
+   |        |             |                 Raspberry Pi Zero
+   |        |             |                      PiCore Linux
+   |reset   |spi data     | enable data
+   v        v             |
+  ++------+-+-+-------+   |
+  |       |SPI|       |   v
+  |       +---+       |
+  |       |DMA|       |
+  |       +-+-+       |
+  |         |         |
+  |         v         |
+  |    +----+----+    |
+  |    |3*16*cols|    |
+  |    |  bytes  |    |
+  |    |  buffer |    |
+  |    +----+----+    |
+  |         |         |
+  |         v         |
+  |   +-----+-----+   |
+  |   |DMA|DMA|DMA|   |
+  |   +-----------+   |
+  |   |TIM|TIM|TIM|   |
+  |   +-----------+   |
+  |   |PORTB 16bit|   | STM32F103
+  +---+-----+-----+---+
+            |
+            v
+         led data
 
 
 Credits:
 http://www.cnblogs.com/shangdawei/p/4762035.html
+https://github.com/hmng/jsonrpc-c
