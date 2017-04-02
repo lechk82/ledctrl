@@ -1,18 +1,10 @@
-// Definitions for MCP23017 Gpio Extender from Microchip Semiconductor
+// Definitions for PCF8574 Gpio Port Expander
 
 /dts-v1/;
 /plugin/;
 
 / {
 	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
-	/*
-	fragment@0 {
-		target = <&i2c1>;
-		__overlay__ {
-			status = "okay";
-		};
-	};
-	*/
 	fragment@0 {
 		target = <&i2c1>;
 		__overlay__ {
@@ -24,7 +16,6 @@
 				reg = <0x21>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				//lines-initial-states = <0xff>;
 				status = "okay";
 			};
 			pcf8574_1 {
@@ -32,7 +23,6 @@
                                 reg = <0x22>;
                                 gpio-controller;
                                 #gpio-cells = <2>;
-                                //lines-initial-states = <0xff>;
                                 status = "okay";
 			};
 		};		
