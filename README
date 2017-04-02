@@ -11,7 +11,7 @@ This project is currently under development.
         |                          |  Raspberry Pi  |             
 +----+  |            +-------+     |      Zero      |             |
 |LCD |  |            | level |     +----------------+             |   +----+
-|1602+<-----------+--+shifter+<-+->+I2C|SPI|GPIO|USB+---------------->+Wifi|
+|1602+<-----------+->+shifter+<-+->+I2C|SPI|GPIO|USB+---------------->+Wifi|
 +----+  |         |  +-------+  ^  +-----+----+-----+             |   +----+
         |         |             |        ^    ^                   |
         |         |  +-------+  |        |    |                   |   +----+
@@ -67,12 +67,12 @@ This project is currently under development.
               .              |   16x      | +-+--+ |16x
               .              +------------->+RJ45| |ledctrl_output
               .                  +24V     | |8p8c| |in groups of 4
-              .                           +---+----+
-              .                               |
+              .                           +-+-+--+-+
               .                               | 16x patch cable
-              .                               |
+              .                               | RS485 Signal
+              .                               | 24V Power
               .                               v
-              .                     +---------+--------------+
+              .                     +-------+-+--+-----------+
               .                     | +24V  |RJ45|           |
               .                     |   +---+8p8c+-------+   |
               .                     |   |   +----+       |   |
@@ -80,7 +80,7 @@ This project is currently under development.
               .                     +---+-----+  +5V  +--+---+
               .                     |  5V/3A  +------>+MAX481|16x
               .                     |step-down|       |  Rx  |ledctrl_driver
-              .                     +---+-------------+--+---+
+              .                     +---+-----+-------+--+---+
               .                         |                |
               .                      +5V|                |led data
               .                         |                |
