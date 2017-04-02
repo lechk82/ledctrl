@@ -91,7 +91,7 @@ This project is currently under development.
               .                      +5V|                |led data
               .                         |                |
               .                         |  +----------+  |
-              .                         +->+ WS2812b  +<-+
+              .                         +->+  WS2812  +<-+
               .                            |LED-Stripe|
               .                            +----------+
               .                                     16x Stripes
