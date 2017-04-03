@@ -47,6 +47,9 @@ typedef union {
   } rgba;
 } rgba32_t;
 
+uint32_t GpioBase0 = 0;
+uint32_t GpioBase1 = 0;
+
 const uint8_t gamma8[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
@@ -80,10 +83,11 @@ bool busy = true;
 
 /*** Prototypes ***/
 uint32_t getGpioBase(uint8_t reg);
-void exportGpios(uint32_t base, uint32_t n);
-void unexportGpios(uint32_t base, uint32_t n);
-void setGpio(uint32_t base, uint32_t gpio, bool val);
+uint32_t exportGpios(uint32_t base, uint32_t n);
+uint32_t unexportGpios(uint32_t base, uint32_t n);
+uint32_t setGpio(uint32_t base, uint32_t gpio, bool val);
 
+cJSON * setEnable(jrpc_context * ctx, cJSON * params, cJSON *id);
 cJSON * initLED(jrpc_context * ctx, cJSON * params, cJSON *id);
 cJSON * setLED(jrpc_context * ctx, cJSON * params, cJSON *id);
 cJSON * setGamma(jrpc_context * ctx, cJSON * params, cJSON *id);
@@ -117,8 +121,11 @@ int main(int argc, char* argv[]){
     unexportGpios(base,8);
     */
     
+    
+    
 	//server stuff
 	jrpc_server_init(&my_server, port);
+    jrpc_register_procedure(&my_server, setEnable, "e", NULL );
 	jrpc_register_procedure(&my_server, initLED, "i", NULL );
 	jrpc_register_procedure(&my_server, setLED, "s", NULL );
 	jrpc_register_procedure(&my_server, setGamma, "y", NULL );
@@ -135,7 +142,7 @@ int main(int argc, char* argv[]){
 
 uint32_t getGpioBase(uint8_t reg){
 glob_t globbuf;
-FILE * fp;
+FILE * fp = NULL;
 char buf[255];
 uint32_t base=0;
     
@@ -143,9 +150,11 @@ uint32_t base=0;
     glob(buf, 0, NULL, &globbuf);
     if(globbuf.gl_pathc == 1){
         fp = fopen (globbuf.gl_pathv[0],"r");
-        fscanf(fp, "%s", buf);
-        base = atoi(buf);
-        fclose (fp);
+        if(fp){
+            fscanf(fp, "%s", buf);
+            base = atoi(buf);
+            fclose (fp);
+        }
     }
     else{
         globfree(&globbuf);
@@ -156,61 +165,78 @@ uint32_t base=0;
     return base;
 }
 
-void exportGpios(uint32_t base, uint32_t n){
-FILE * fp;
+uint32_t exportGpios(uint32_t base, uint32_t n){
+FILE * fp = NULL;
 char buf1[16];
 char buf2[255];
 char buf3[255];
+uint32_t err = 0;
     for(int i=0;i<n;i++){
         sprintf(buf2, "/sys/class/gpio/gpio%d", base+i);
         sprintf(buf3, "/sys/class/gpio/gpio%d/direction", base+i);
         if( access(buf2, F_OK ) == -1 ) {
             printf("export: %s\n",buf2); fflush(stdout);
             fp = fopen("/sys/class/gpio/export", "w");
-            sprintf(buf1, "%d", base+i); 
-            fwrite(buf1, 1 , sizeof(buf1) , fp );
-            fclose (fp);
+            if(fp){
+                sprintf(buf1, "%d", base+i); 
+                fwrite(buf1, 1 , sizeof(buf1) , fp );
+                fclose (fp);
+            }
+            else err++;
             while(access(buf3, F_OK ) == -1);
-            
+            fp = NULL;
             fp = fopen(buf3, "w");
-            sprintf(buf1, "high"); 
-            fwrite(buf1, 1 , sizeof(buf1) , fp );
-            fclose (fp);
-            
+            if(fp){
+                sprintf(buf1, "high"); 
+                fwrite(buf1, 1 , sizeof(buf1) , fp );
+                fclose (fp);
+            }
+            else err++;
         }
     }
-    return;
+    return err;
 }
 
-void unexportGpios(uint32_t base, uint32_t n){
-FILE * fp;
+uint32_t unexportGpios(uint32_t base, uint32_t n){
+FILE * fp = NULL;
 char buf1[16];
 char buf2[255];
 char buf3[255];
+uint32_t err = 0;
     for(int i=0;i<n;i++){
         sprintf(buf2, "/sys/class/gpio/gpio%d", base+i);
         sprintf(buf3, "/sys/class/gpio/gpio%d/value", base+i);
         if( access(buf2, W_OK ) != -1 ) {
             fp = fopen(buf3, "w");
-            sprintf(buf1, "%d", 1); 
-            fwrite(buf1, 1 , sizeof(buf1) , fp );
-            fclose (fp);
-            printf("unexport: %s\n",buf2); fflush(stdout);
-            if( access(buf3, W_OK ) != -1 ) {
-                fp = fopen("/sys/class/gpio/unexport", "w");
-                sprintf(buf1, "%d", base+i); 
+            if(fp){
+                sprintf(buf1, "%d", 1); 
                 fwrite(buf1, 1 , sizeof(buf1) , fp );
                 fclose (fp);
+                printf("unexport: %s\n",buf2); fflush(stdout);
             }
+            else err++;
+            if( access(buf3, W_OK ) != -1 ) {
+                fp = NULL;
+                fp = fopen("/sys/class/gpio/unexport", "w");
+                if(fp){
+                    sprintf(buf1, "%d", base+i); 
+                    fwrite(buf1, 1 , sizeof(buf1) , fp );
+                    fclose (fp);
+                }
+                else err++;
+            }
+            else err++;
         }
+        else err++;
     }
-    return;
+    return err;
 }
 
-void setGpio(uint32_t base, uint32_t gpio, bool val){
-FILE * fp;
+uint32_t setGpio(uint32_t base, uint32_t gpio, bool val){
+FILE * fp = NULL;
 char buf1[16];
 char buf2[255];
+uint32_t err = 0;
     sprintf(buf2, "/sys/class/gpio/gpio%d/value", base+gpio);
     if( access(buf2, W_OK ) != -1 ) {
         if(val == true){
@@ -220,10 +246,19 @@ char buf2[255];
             sprintf(buf1, "%d", 0); 
         }
         fp = fopen(buf2, "w");
-        fwrite(buf1, 1 , sizeof(buf1) , fp );
-        fclose (fp);
+        if(fp){
+            fwrite(buf1, 1 , sizeof(buf1) , fp );
+            fclose (fp);
+        }
+        else err++;
     }
-    return;
+    else err++;
+    return err;
+}
+
+cJSON * setEnable(jrpc_context * ctx, cJSON * params, cJSON *id) {
+    setGpio(GpioBase0, fast_atoi(params->child->string), !(bool) params->child->valueint);
+    return cJSON_CreateNumber(true);
 }
 
 void callback(cJSON *item, uint8_t level, uint16_t iter){
@@ -303,7 +338,14 @@ uint8_t err = 0;
 		close(fd);
 		
 	}
+    
+    GpioBase0 = getGpioBase(21);
+    GpioBase1 = getGpioBase(22);
+    ret += exportGpios(GpioBase0,8);
+    ret += exportGpios(GpioBase1,8);
+    
 	if(err){
+        printf("INIT: FAILED\n"); fflush(stdout);
 		initLEDdone = false;
 		return cJSON_CreateNumber(false);
 	}
@@ -316,6 +358,8 @@ uint8_t err = 0;
 
 cJSON * exit_server(jrpc_context * ctx, cJSON * params, cJSON *id){
 	jrpc_server_stop(&my_server);
+    unexportGpios(GpioBase0,8);
+    unexportGpios(GpioBase1,8);
 	printf("SERVER: EXIT\n"); fflush(stdout);
 	return cJSON_CreateNumber(true);
 }
